@@ -1,0 +1,39 @@
+<form id="editForm">
+    <div class="mb-3">
+        <label for="gameTitle" class="form-label">Game Title</label>
+        <input
+            type="text"
+            class="form-control"
+            id="gameTitle"
+            placeholder="Enter the title of the game"
+            aria-describedby="gameTitleHelp"
+            required
+        />
+        <div id="gameTitleHelp" class="form-text">The official title of the game.</div>
+    </div>
+    <div class="mb-3">
+        <label for="gameYear" class="form-label">Release Year</label>
+        <input
+            type="number"
+            class="form-control"
+            id="gameYear"
+            placeholder="Enter the release year"
+            aria-describedby="gameYearHelp"
+            required
+        />
+        <div id="gameYearHelp" class="form-text">Year the game was first released.</div>
+    </div>
+    <div class="mb-3">
+        <label for="gameImageUrl" class="form-label">Cover Image URL</label>
+        <input
+            type="url"
+            class="form-control"
+            id="gameImageUrl"
+            placeholder="Enter the URL for the game's image"
+            aria-describedby="gameImageUrlHelp"
+            required
+        />
+        <div id="gameImageUrlHelp" class="form-text">Link to an image representing the game.</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
