@@ -37,180 +37,109 @@ const gamesList = [
     },
 ];
 
-// Fonction pour insérer des cartes dynamiques
+// Fonction principale pour écrire les cartes dynamiques
 function writeDom() {
-    const gameContainer = document.querySelector('.row');
-    gamesList.forEach((game) => {
-        const card = `
-            <article class="col">
-                <div class="card shadow-sm">
-                    <img src="${game.imageUrl}" class="card-img-top" alt="${game.title}" />
-                    <div class="card-body">
-                        <h5 class="card-title">${game.title}</h5>
-                        <p class="card-text">Released in ${game.year}.</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="btn-group">
-                                <button 
-                                    type="button" 
-                                    class="btn btn-sm btn-outline-secondary view" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#exampleModal" 
-                                    data-edit-id="${game.id}">
-                                    View
-                                </button>
-                                <button 
-                                    type="button" 
-                                    class="btn btn-sm btn-outline-secondary edit" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#exampleModal" 
-                                    data-edit-id="${game.id}">
-                                    Edit
-                                </button>
-                            </div>
+    const gameContainer = document.querySelector(".row");
+    gameContainer.innerHTML = ""; // Réinitialiser les cartes
+    gamesList.forEach((game) => gameContainer.innerHTML += generateCard(game));
+
+    attachButtonEvents();
+}
+
+// Générer une carte HTML pour un jeu
+function generateCard(game) {
+    return `
+        <article class="col">
+            <div class="card shadow-sm">
+                <img src="${game.imageUrl}" class="card-img-top" alt="${game.title}" />
+                <div class="card-body">
+                    <h5 class="card-title">${game.title}</h5>
+                    <p class="card-text">Released in ${game.year}.</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">
+                            <button 
+                                type="button" 
+                                class="btn btn-sm btn-outline-secondary view" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#exampleModal" 
+                                data-id="${game.id}">
+                                View
+                            </button>
+                            <button 
+                                type="button" 
+                                class="btn btn-sm btn-outline-secondary edit" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#exampleModal" 
+                                data-id="${game.id}">
+                                Edit
+                            </button>
                         </div>
                     </div>
                 </div>
-            </article>
-        `;
-        gameContainer.innerHTML += card;
-    });
+            </div>
+        </article>
+    `;
+}
 
-    // Ajouter les événements aux boutons "view" et "edit"
-    const editButtons = document.querySelectorAll(".edit");
-    editButtons.forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            const gameId = e.target.getAttribute("data-edit-id");
-            editModal(gameId);
-        });
+// Ajouter des événements aux boutons
+function attachButtonEvents() {
+    document.querySelectorAll(".view").forEach((btn) => {
+        btn.addEventListener("click", (e) => viewModal(e.target.dataset.id));
     });
-
-    const viewButtons = document.querySelectorAll(".view");
-    viewButtons.forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            const gameId = e.target.getAttribute("data-edit-id");
-            viewModal(gameId);
-        });
+    document.querySelectorAll(".edit").forEach((btn) => {
+        btn.addEventListener("click", (e) => editModal(e.target.dataset.id));
     });
 }
 
-// Fonction qui met à jour le modal pour "Edit"
-
-function editModal(gameId) {
-    // Trouver le jeu correspondant dans la liste par son ID
-    const result = gamesList.find((game) => game.id === parseInt(gameId));
-
-    if (result) {
-        // Charger le contenu du formulaire depuis form.html
-        fetch("./form.html")
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to load form.html");
-                }
-                return response.text(); // Lire le contenu de form.html
-            })
-            .then((formHtml) => {
-                // Modifier le modal avec le titre et le formulaire récupéré
-                modifyModal("Edit Mode", formHtml);
-
-                // Pré-remplir les champs du formulaire avec les données du jeu
-                document.querySelector("#gameTitle").value = result.title;
-                document.querySelector("#gameYear").value = result.year;
-                document.querySelector("#gameImageUrl").value = result.imageUrl;
-
-                // Ajouter un seul bouton de soumission dans le pied de page du modal
-                const footer = document.querySelector(".modal-footer");
-                footer.innerHTML = `
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Close
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="saveChangesButton">Submit</button>
-                `;
-
-                // Ajouter un gestionnaire d'événements pour le bouton "Submit"
-                document.querySelector("#saveChangesButton").addEventListener("click", (e) => {
-                    // Récupérer les nouvelles valeurs du formulaire
-                    const newTitle = document.querySelector("#gameTitle").value;
-                    const newYear = document.querySelector("#gameYear").value;
-                    const newImageUrl = document.querySelector("#gameImageUrl").value;
-
-                    // Mettre à jour le jeu dans la liste
-                    result.title = newTitle;
-                    result.year = newYear;
-                    result.imageUrl = newImageUrl;
-
-                    // Recharger les cartes après la mise à jour
-                    const gameContainer = document.querySelector('.row');
-                    gameContainer.innerHTML = ""; // Réinitialiser le conteneur
-                    writeDom(); // Réécrire les cartes
-
-                    // Fermer le modal après avoir sauvegardé les modifications
-                    const modal = bootstrap.Modal.getInstance(document.getElementById("exampleModal"));
-                    modal.hide();
-                });
-            })
-            .catch((error) => {
-                console.error("Error loading the form:", error);
-            });
-    }
-}
-
-
-// Fonction qui met à jour le modal pour "View"
+// Afficher le modal "View"
 function viewModal(gameId) {
-    const result = gamesList.find((game) => game.id === parseInt(gameId));
-    
-    if (result) {
-        const modalBody = `<img src="${result.imageUrl}" alt="${result.title}" class="img-fluid" />`;
-        modifyModal(result.title, modalBody);
-        
-        // Modifier le footer
-        document.querySelector(".modal-footer").innerHTML = `
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                Close
-            </button>
-        `;
-    } else {
-        console.error("Game not found");
-    }
+    const game = gamesList.find((game) => game.id === parseInt(gameId));
+    if (!game) return console.error("Game not found");
+
+    modifyModal(
+        game.title,
+        `<img src="${game.imageUrl}" alt="${game.title}" class="img-fluid" />`,
+        `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`
+    );
 }
 
-function updateGames(title, year, imageUrl, gameId) {
-    const index = gamesList.findIndex((game) => game.id === parseInt(gameId));
-    
-    if (index !== -1) {
-        gamesList[index].title = title;
-        gamesList[index].year = year;
-        gamesList[index].imageUrl = imageUrl;
-        
-        document.querySelector(".row").innerHTML = ""; // Réinitialiser les cartes dans le DOM
-        writeDom(); // Réécrire les cartes
-        
-        // Réajuster les événements sur les boutons après la mise à jour
-        const editButtons = document.querySelectorAll(".edit");
-        editButtons.forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-                editModal(e.target.getAttribute("data-edit-id"));
+// Afficher le modal "Edit"
+function editModal(gameId) {
+    const game = gamesList.find((game) => game.id === parseInt(gameId));
+    if (!game) return console.error("Game not found");
+
+    fetch("./form.html")
+        .then((response) => response.ok ? response.text() : Promise.reject("Failed to load form.html"))
+        .then((formHtml) => {
+            modifyModal("Edit Game", formHtml, `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" id="saveChangesButton">Save</button>
+            `);
+
+            // Pré-remplir le formulaire
+            document.querySelector("#gameTitle").value = game.title;
+            document.querySelector("#gameYear").value = game.year;
+            document.querySelector("#gameImageUrl").value = game.imageUrl;
+
+            // Ajouter un événement au bouton "Save"
+            document.querySelector("#saveChangesButton").addEventListener("click", () => {
+                game.title = document.querySelector("#gameTitle").value;
+                game.year = parseInt(document.querySelector("#gameYear").value);
+                game.imageUrl = document.querySelector("#gameImageUrl").value;
+
+                writeDom();
+                bootstrap.Modal.getInstance(document.getElementById("exampleModal")).hide();
             });
-        });
-
-        const viewButtons = document.querySelectorAll(".view");
-        viewButtons.forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-                viewModal(e.target.getAttribute("data-edit-id"));
-            });
-        });
-    } else {
-        console.error("Game not found");
-    }
+        })
+        .catch((error) => console.error(error));
 }
 
-// Fonction pour modifier le contenu du modal
-function modifyModal(modalTitle, modalBody) {
-    // Écrire le nom du jeu dans le titre du modal
-    document.querySelector(".modal-title").textContent = modalTitle;
-    // Écrire dans le corps du modal
-    document.querySelector(".modal-body").innerHTML = modalBody;
+// Modifier le contenu du modal
+function modifyModal(title, body, footer) {
+    document.querySelector(".modal-title").textContent = title;
+    document.querySelector(".modal-body").innerHTML = body;
+    document.querySelector(".modal-footer").innerHTML = footer;
 }
 
-// Appel de la fonction d'écriture au chargement du DOM
-document.addEventListener('DOMContentLoaded', writeDom);
+// Initialiser les cartes au chargement de la page
+document.addEventListener("DOMContentLoaded", writeDom);
